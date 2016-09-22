@@ -51,6 +51,7 @@ public class CalculatorActivity extends AppCompatActivity {
 
     public void onClickDigit(View view) {
         Button button = (Button) view;
+        currentState = DIGIT;
         if (currentText.length() == 1 && button.getText().toString().charAt(0) == '0' && currentText.charAt(0) == '0') {
             // I don't know how to write effective if-statement, sorry ;)
         } else if (currentText.length() == 1 && button.getText().toString().charAt(0) != '0' && currentText.charAt(0) == '0') {
@@ -61,7 +62,7 @@ public class CalculatorActivity extends AppCompatActivity {
             currentText.append(button.getText().toString());
             expression.setText(currentText.toString());
         }
-        if(currentOperation != EMPTY){
+        if (currentOperation != EMPTY) {
             secondNumber = Double.parseDouble(currentText.toString());
         } else {
             firstNumber = Double.parseDouble(currentText.toString());
@@ -72,34 +73,48 @@ public class CalculatorActivity extends AppCompatActivity {
         currentText.setLength(0);
         currentText.append('0');
         expression.setText(currentText.toString());
-        currentOperation = EMPTY;
-        currentState = DIGIT;
-        firstNumber = 0;
-        secondNumber = 0;
+        resetState();
     }
 
     public void OnClickPoint(View view) {
-        currentText.append('.');
-        expression.setText(currentText.toString());
-        if(currentOperation != EMPTY){
-            secondNumber = Double.parseDouble(currentText.toString());
-        } else {
-            firstNumber = Double.parseDouble(currentText.toString());
+        if (currentState != OPERATION) {
+            currentText.append('.');
+            expression.setText(currentText.toString());
+            if (currentOperation != EMPTY) {
+                secondNumber = Double.parseDouble(currentText.toString());
+            } else {
+                firstNumber = Double.parseDouble(currentText.toString());
+            }
         }
     }
 
     public void OnClickDelete(View view) {
+        if (currentState == OPERATION) {
+            expression.setText("0");
+            currentText.setLength(0);
+            resetState();
+            return;
+        }
+
         if (currentText.length() > 0) {
             currentText.deleteCharAt(currentText.length() - 1);
-            Log.i("TEXT", String.valueOf(currentText.length()));
         }
-        Log.i("TEXT", currentText.toString());
         expression.setText(currentText.toString());
-        if(currentOperation != EMPTY){
-            secondNumber = Double.parseDouble(currentText.toString());
+
+
+        if (currentOperation != EMPTY) {
+            if (currentText.length() == 0) {
+                secondNumber = 0;
+            } else
+                secondNumber = Double.parseDouble(currentText.toString());
         } else {
-            firstNumber = Double.parseDouble(currentText.toString());
+            if (currentText.length() == 0) {
+                firstNumber = 0;
+            } else
+                firstNumber = Double.parseDouble(currentText.toString());
         }
+
+
     }
 
     public void OnClickPlusMinus(View view) {
@@ -110,15 +125,15 @@ public class CalculatorActivity extends AppCompatActivity {
         else if (currentText.length() > 1 && currentText.charAt(0) == '0')
             currentText.insert(0, '-');
         expression.setText(currentText.toString());
-        if(currentOperation != EMPTY){
-            secondNumber = -1.0 * Double.parseDouble(currentText.toString());
+        if (currentOperation != EMPTY) {
+            secondNumber = Double.parseDouble(currentText.toString());
         } else {
-            firstNumber = -1.0 * Double.parseDouble(currentText.toString());
+            firstNumber = Double.parseDouble(currentText.toString());
         }
     }
 
-    public int chooseOperation(String str){
-        switch(str){
+    public int chooseOperation(String str) {
+        switch (str) {
             case "+":
                 return ADD;
             case "-":
@@ -141,7 +156,7 @@ public class CalculatorActivity extends AppCompatActivity {
 
     public void OnClickResult(View view) {
         double result = 0;
-        switch(currentOperation){
+        switch (currentOperation) {
             case ADD:
                 result = firstNumber + secondNumber;
                 break;
@@ -152,18 +167,28 @@ public class CalculatorActivity extends AppCompatActivity {
                 result = firstNumber * secondNumber;
                 break;
             case DIV:
-                if(Math.abs(secondNumber) < 1e-7){
+                if (Math.abs(secondNumber) < 1e-9) {
                     expression.setText("ERROR");
+                    currentText.setLength(0);
+                    resetState();
+                    firstNumber = result;
                 } else {
                     result = firstNumber / secondNumber;
                 }
                 break;
         }
-        currentText = new StringBuilder(String.valueOf(result));
-        expression.setText(currentText);
+        if (!expression.getText().equals("ERROR")) {
+            currentText = new StringBuilder(String.valueOf(result));
+            expression.setText(currentText);
+            resetState();
+            firstNumber = result;
+        }
+    }
+
+    public void resetState() {
         currentOperation = EMPTY;
         currentState = OPERATION;
-        firstNumber = result;
+        firstNumber = 0;
         secondNumber = 0;
     }
 
@@ -174,7 +199,7 @@ public class CalculatorActivity extends AppCompatActivity {
         saveInstanceState.putDouble(FIRST_NUMBER, firstNumber);
         saveInstanceState.putDouble(SECOND_NUMBER, secondNumber);
         saveInstanceState.putInt(STATE, currentState);
-        saveInstanceState.putInt(CURRENT_OPERATION,currentOperation);
+        saveInstanceState.putInt(CURRENT_OPERATION, currentOperation);
     }
 
 
